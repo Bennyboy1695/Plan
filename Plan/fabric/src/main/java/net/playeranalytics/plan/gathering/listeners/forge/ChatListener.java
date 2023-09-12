@@ -14,74 +14,70 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan.gathering.listeners.fabric;
+package net.playeranalytics.plan.gathering.listeners.forge;
 
-import com.djrapitops.plan.gathering.cache.SessionCache;
-import com.djrapitops.plan.gathering.domain.ActiveSession;
+import com.djrapitops.plan.delivery.domain.Nickname;
+import com.djrapitops.plan.gathering.cache.NicknameCache;
 import com.djrapitops.plan.identification.ServerInfo;
-import com.djrapitops.plan.settings.config.WorldAliasSettings;
 import com.djrapitops.plan.storage.database.DBSystem;
-import com.djrapitops.plan.storage.database.transactions.events.StoreWorldNameTransaction;
+import com.djrapitops.plan.storage.database.transactions.events.StoreNicknameTransaction;
 import com.djrapitops.plan.utilities.logging.ErrorContext;
 import com.djrapitops.plan.utilities.logging.ErrorLogger;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.GameMode;
 import net.playeranalytics.plan.gathering.listeners.FabricListener;
-import net.playeranalytics.plan.gathering.listeners.events.PlanFabricEvents;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Event Listener for PlayerGameModeChangeEvents.
+ * Event Listener for chat events.
  *
  * @author AuroraLS3
  */
 @Singleton
-public class GameModeChangeListener implements FabricListener {
+public class ChatListener implements FabricListener {
 
-    private final WorldAliasSettings worldAliasSettings;
     private final ServerInfo serverInfo;
     private final DBSystem dbSystem;
+    private final NicknameCache nicknameCache;
     private final ErrorLogger errorLogger;
 
     private boolean isEnabled = false;
     private boolean wasRegistered = false;
 
+
     @Inject
-    public GameModeChangeListener(
-            WorldAliasSettings worldAliasSettings,
+    public ChatListener(
             ServerInfo serverInfo,
             DBSystem dbSystem,
+            NicknameCache nicknameCache,
             ErrorLogger errorLogger
     ) {
-        this.worldAliasSettings = worldAliasSettings;
         this.serverInfo = serverInfo;
         this.dbSystem = dbSystem;
+        this.nicknameCache = nicknameCache;
         this.errorLogger = errorLogger;
     }
 
-    public void onGameModeChange(ServerPlayerEntity player, GameMode newGameMode) {
+    public void onChat(ServerPlayerEntity player) {
         try {
-            actOnEvent(player, newGameMode);
+            actOnChatEvent(player);
         } catch (Exception e) {
-            errorLogger.error(e, ErrorContext.builder().related(getClass(), player, newGameMode).build());
+            errorLogger.error(e, ErrorContext.builder().related(player).build());
         }
     }
 
-    private void actOnEvent(ServerPlayerEntity player, GameMode newGameMode) {
-        UUID uuid = player.getUuid();
+    private void actOnChatEvent(ServerPlayerEntity player) {
         long time = System.currentTimeMillis();
-        String gameMode = newGameMode.name();
-        String worldName = player.getWorld().getRegistryKey().getValue().toString();
+        UUID uuid = player.getUuid();
+        String displayName = player.getDisplayName().getString();
 
-        dbSystem.getDatabase().executeTransaction(new StoreWorldNameTransaction(serverInfo.getServerUUID(), worldName));
-        worldAliasSettings.addWorld(worldName);
-
-        Optional<ActiveSession> cachedSession = SessionCache.getCachedSession(uuid);
-        cachedSession.ifPresent(session -> session.changeState(worldName, gameMode, time));
+        dbSystem.getDatabase().executeTransaction(new StoreNicknameTransaction(
+                uuid, new Nickname(displayName, time, serverInfo.getServerUUID()),
+                (playerUUID, name) -> nicknameCache.getDisplayName(playerUUID).map(name::equals).orElse(false)
+        ));
     }
 
     @Override
@@ -90,11 +86,11 @@ public class GameModeChangeListener implements FabricListener {
             return;
         }
 
-        PlanFabricEvents.ON_GAMEMODE_CHANGE.register((player, newGameMode) -> {
-            if (!this.isEnabled) {
+        ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
+            if (!isEnabled) {
                 return;
             }
-            this.onGameModeChange(player, newGameMode);
+            onChat(sender);
         });
 
         this.enable();

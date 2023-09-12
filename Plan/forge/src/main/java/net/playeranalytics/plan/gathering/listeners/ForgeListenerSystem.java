@@ -19,8 +19,8 @@ package net.playeranalytics.plan.gathering.listeners;
 import com.djrapitops.plan.PlanPlugin;
 import com.djrapitops.plan.capability.CapabilitySvc;
 import com.djrapitops.plan.gathering.listeners.ListenerSystem;
-import net.playeranalytics.plan.PlanFabric;
-import net.playeranalytics.plan.gathering.listeners.events.PlanFabricEvents;
+import net.playeranalytics.plan.PlanForge;
+import net.playeranalytics.plan.gathering.listeners.events.PlanForgeEvents;
 import net.playeranalytics.plan.gathering.listeners.forge.*;
 import net.playeranalytics.plugin.server.Listeners;
 
@@ -31,21 +31,21 @@ import javax.inject.Inject;
  *
  * @author Kopo942
  */
-public class FabricListenerSystem extends ListenerSystem {
+public class ForgeListenerSystem extends ListenerSystem {
 
     private final ChatListener chatListener;
     private final DeathEventListener deathEventListener;
-    private final FabricAFKListener fabricAFKListener;
+    private final ForgeAFKListener fabricAFKListener;
     private final GameModeChangeListener gameModeChangeListener;
     private final PlayerOnlineListener playerOnlineListener;
     private final WorldChangeListener worldChangeListener;
     private final Listeners listeners;
 
     @Inject
-    public FabricListenerSystem(
+    public ForgeListenerSystem(
             ChatListener chatListener,
             DeathEventListener deathEventListener,
-            FabricAFKListener fabricAFKListener,
+            ForgeAFKListener fabricAFKListener,
             GameModeChangeListener gameModeChangeListener,
             PlayerOnlineListener playerOnlineListener,
             WorldChangeListener worldChangeListener,
@@ -84,7 +84,7 @@ public class FabricListenerSystem extends ListenerSystem {
     @Override
     public void callEnableEvent(PlanPlugin plugin) {
         boolean isEnabled = plugin.isSystemEnabled();
-        PlanFabricEvents.ON_ENABLE.invoker().onEnable((PlanFabric) plugin);
+        PlanForgeEvents.postPlanEnableEvent((PlanForge) plugin);
         CapabilitySvc.notifyAboutEnable(isEnabled);
     }
 }

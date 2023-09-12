@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan.modules.fabric;
+package net.playeranalytics.plan.modules.forge;
 
 import com.djrapitops.plan.TaskSystem;
 import com.djrapitops.plan.delivery.web.ResourceWriteTask;
@@ -33,19 +33,19 @@ import com.djrapitops.plan.storage.upkeep.OldDependencyCacheDeletionTask;
 import dagger.Binds;
 import dagger.Module;
 import dagger.multibindings.IntoSet;
-import net.minecraft.server.world.ServerWorld;
-import net.playeranalytics.plan.gathering.timed.FabricPingCounter;
+import net.minecraft.server.level.ServerLevel;
+import net.playeranalytics.plan.gathering.timed.ForgePingCounter;
 
 @Module
-public interface FabricTaskModule {
+public interface ForgeTaskModule {
 
     @Binds
     @IntoSet
-    TaskSystem.Task bindTPSCounter(ServerTPSCounter<ServerWorld> tpsCounter);
+    TaskSystem.Task bindTPSCounter(ServerTPSCounter<ServerLevel> tpsCounter);
 
     @Binds
     @IntoSet
-    TaskSystem.Task bindPingCounter(FabricPingCounter pingCounter);
+    TaskSystem.Task bindPingCounter(ForgePingCounter pingCounter);
 
     @Binds
     @IntoSet

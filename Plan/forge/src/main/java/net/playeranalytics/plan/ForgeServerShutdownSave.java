@@ -21,8 +21,8 @@ import com.djrapitops.plan.gathering.afk.AFKTracker;
 import com.djrapitops.plan.settings.locale.Locale;
 import com.djrapitops.plan.storage.database.DBSystem;
 import com.djrapitops.plan.utilities.logging.ErrorLogger;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.playeranalytics.plan.gathering.listeners.forge.FabricAFKListener;
+import net.minecraft.server.MinecraftServer;
+import net.playeranalytics.plan.gathering.listeners.forge.ForgeAFKListener;
 import net.playeranalytics.plugin.server.PluginLogger;
 
 import javax.inject.Inject;
@@ -30,18 +30,18 @@ import javax.inject.Singleton;
 import java.util.Optional;
 
 /**
- * ServerShutdownSave implementation for Fabric-based servers.
+ * ServerShutdownSave implementation for Forge-based servers.
  *
- * @author Kopo942
+ * @author Bennyboy1695
  */
 @Singleton
-public class FabricServerShutdownSave extends ServerShutdownSave {
+public class ForgeServerShutdownSave extends ServerShutdownSave {
 
-    private final MinecraftDedicatedServer server;
+    private final MinecraftServer server;
 
     @Inject
-    public FabricServerShutdownSave(
-            MinecraftDedicatedServer server,
+    public ForgeServerShutdownSave(
+            MinecraftServer server,
             Locale locale,
             DBSystem dbSystem,
             PluginLogger logger,
@@ -58,6 +58,6 @@ public class FabricServerShutdownSave extends ServerShutdownSave {
 
     @Override
     public Optional<AFKTracker> getAfkTracker() {
-        return Optional.ofNullable(FabricAFKListener.getAfkTracker());
+        return Optional.ofNullable(ForgeAFKListener.getAfkTracker());
     }
 }

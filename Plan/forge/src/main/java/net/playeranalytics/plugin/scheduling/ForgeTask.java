@@ -14,26 +14,25 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan.modules.fabric;
+package net.playeranalytics.plugin.scheduling;
 
-import com.djrapitops.plan.identification.properties.ServerProperties;
-import dagger.Module;
-import dagger.Provides;
-import net.playeranalytics.plan.identification.properties.FabricServerProperties;
+import java.util.concurrent.Future;
 
-import javax.inject.Singleton;
+public class ForgeTask implements Task {
 
-/**
- * Dagger module for providing ServerProperties on Fabric.
- *
- * @author Kopo942
- */
-@Module
-public class FabricServerPropertiesModule {
+    private final Future<?> task;
 
-    @Provides
-    @Singleton
-    ServerProperties provideServerProperties(FabricServerProperties serverProperties) {
-        return serverProperties;
+    public ForgeTask(Future<?> task) {
+        this.task = task;
+    }
+
+    @Override
+    public boolean isGameThread() {
+        return false;
+    }
+
+    @Override
+    public void cancel() {
+        task.cancel(false);
     }
 }

@@ -14,50 +14,46 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan;
+package net.playeranalytics.plan.storage.database;
 
-import com.djrapitops.plan.gathering.ServerShutdownSave;
-import com.djrapitops.plan.gathering.afk.AFKTracker;
+import com.djrapitops.plan.settings.config.PlanConfig;
+import com.djrapitops.plan.settings.config.paths.DatabaseSettings;
 import com.djrapitops.plan.settings.locale.Locale;
 import com.djrapitops.plan.storage.database.DBSystem;
-import com.djrapitops.plan.utilities.logging.ErrorLogger;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.playeranalytics.plan.gathering.listeners.forge.FabricAFKListener;
+import com.djrapitops.plan.storage.database.MySQLDB;
+import com.djrapitops.plan.storage.database.SQLiteDB;
 import net.playeranalytics.plugin.server.PluginLogger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Optional;
+
 
 /**
- * ServerShutdownSave implementation for Fabric-based servers.
+ * Fabric database system that initializes the required SQLite and MySQL database objects.
  *
  * @author Kopo942
  */
 @Singleton
-public class FabricServerShutdownSave extends ServerShutdownSave {
-
-    private final MinecraftDedicatedServer server;
+public class ForgeDBSystem extends DBSystem {
 
     @Inject
-    public FabricServerShutdownSave(
-            MinecraftDedicatedServer server,
+    public ForgeDBSystem(
             Locale locale,
-            DBSystem dbSystem,
-            PluginLogger logger,
-            ErrorLogger errorLogger
+            MySQLDB mySQLDB,
+            SQLiteDB.Factory sqLiteDB,
+            PlanConfig config,
+            PluginLogger logger
     ) {
-        super(locale, dbSystem, logger, errorLogger);
-        this.server = server;
+        super(config, locale, sqLiteDB, logger);
+
+        databases.add(mySQLDB);
+        databases.add(sqLiteDB.usingDefaultFile());
     }
 
     @Override
-    protected boolean checkServerShuttingDownStatus() {
-        return !server.isRunning();
-    }
-
-    @Override
-    public Optional<AFKTracker> getAfkTracker() {
-        return Optional.ofNullable(FabricAFKListener.getAfkTracker());
+    public void enable() {
+        String dbType = config.get(DatabaseSettings.TYPE).toLowerCase().trim();
+        db = getActiveDatabaseByName(dbType);
+        super.enable();
     }
 }

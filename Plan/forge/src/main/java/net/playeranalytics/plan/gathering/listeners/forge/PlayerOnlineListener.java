@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan.gathering.listeners.fabric;
+package net.playeranalytics.plan.gathering.listeners.forge;
 
 import com.djrapitops.plan.gathering.cache.JoinAddressCache;
 import com.djrapitops.plan.gathering.domain.event.PlayerJoin;
@@ -29,15 +29,16 @@ import com.djrapitops.plan.storage.database.transactions.events.KickStoreTransac
 import com.djrapitops.plan.utilities.logging.ErrorContext;
 import com.djrapitops.plan.utilities.logging.ErrorLogger;
 import com.mojang.authlib.GameProfile;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.network.NetworkState;
-import net.minecraft.network.packet.c2s.handshake.HandshakeC2SPacket;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.playeranalytics.plan.gathering.FabricPlayerPositionTracker;
-import net.playeranalytics.plan.gathering.domain.FabricPlayerData;
-import net.playeranalytics.plan.gathering.listeners.FabricListener;
-import net.playeranalytics.plan.gathering.listeners.events.PlanFabricEvents;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.handshake.ClientIntentionPacket;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.playeranalytics.plan.gathering.ForgePlayerPositionTracker;
+import net.playeranalytics.plan.gathering.domain.ForgePlayerData;
+import net.playeranalytics.plan.gathering.listeners.ForgeListener;
+import net.playeranalytics.plan.gathering.listeners.events.PlanForgeEvents;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -46,7 +47,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Singleton
-public class PlayerOnlineListener implements FabricListener {
+public class PlayerOnlineListener implements ForgeListener {
 
     private final PlayerJoinEventConsumer joinEventConsumer;
     private final PlayerLeaveEventConsumer leaveEventConsumer;
@@ -55,7 +56,7 @@ public class PlayerOnlineListener implements FabricListener {
     private final ServerInfo serverInfo;
     private final DBSystem dbSystem;
     private final ErrorLogger errorLogger;
-    private final MinecraftDedicatedServer server;
+    private final MinecraftServer server;
 
     private final AtomicReference<String> joinAddress = new AtomicReference<>();
 
@@ -69,7 +70,7 @@ public class PlayerOnlineListener implements FabricListener {
             JoinAddressCache joinAddressCache, ServerInfo serverInfo,
             DBSystem dbSystem,
             ErrorLogger errorLogger,
-            MinecraftDedicatedServer server
+            MinecraftServer server
     ) {
         this.joinEventConsumer = joinEventConsumer;
         this.leaveEventConsumer = leaveEventConsumer;
@@ -86,48 +87,58 @@ public class PlayerOnlineListener implements FabricListener {
             return;
         }
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            if (!this.isEnabled) {
-                return;
-            }
-            onPlayerJoin(handler.player);
-        });
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            if (!this.isEnabled) {
-                return;
-            }
-            beforePlayerQuit(handler.player);
-            onPlayerQuit(handler.player);
-        });
-        PlanFabricEvents.ON_KICKED.register((source, targets, reason) -> {
-            if (!this.isEnabled) {
-                return;
-            }
-            for (ServerPlayerEntity target : targets) {
-                onPlayerKick(target);
+        MinecraftForge.EVENT_BUS.addListener(event -> {
+            if (event instanceof PlayerEvent.PlayerLoggedInEvent playerEvent) {
+                if (!isEnabled) {
+                    return;
+                }
+                onPlayerJoin((ServerPlayer) playerEvent.getEntity());
             }
         });
-        PlanFabricEvents.ON_LOGIN.register((address, profile, reason) -> {
-            if (!this.isEnabled) {
-                return;
+        MinecraftForge.EVENT_BUS.addListener(event -> {
+            if (event instanceof PlayerEvent.PlayerLoggedOutEvent playerEvent) {
+                if (!isEnabled) {
+                    return;
+                }
+                beforePlayerQuit((ServerPlayer) playerEvent.getEntity());
+                onPlayerQuit((ServerPlayer) playerEvent.getEntity());
             }
-            onPlayerLogin(address, profile, reason != null);
         });
-        PlanFabricEvents.ON_HANDSHAKE.register(packet -> {
-            if (!this.isEnabled) {
-                return;
+        MinecraftForge.EVENT_BUS.addListener(event -> {
+            if (event instanceof PlanForgeEvents.PlayerKickEvent playerEvent) {
+                if (!isEnabled) {
+                    return;
+                }
+                for (ServerPlayer target : playerEvent.getTargets()) {
+                    onPlayerKick(target);
+                }
             }
-            onHandshake(packet);
+        });
+        MinecraftForge.EVENT_BUS.addListener(event -> {
+            if (event instanceof PlanForgeEvents.PlayerLoginEvent playerEvent) {
+                if (!isEnabled) {
+                    return;
+                }
+                onPlayerLogin(playerEvent.getSocketAddress(), playerEvent.getGameProfile(), playerEvent.getComponent() != null);
+            }
+        });
+        MinecraftForge.EVENT_BUS.addListener(event -> {
+            if (event instanceof PlanForgeEvents.PlayerHandshakeEvent playerEvent) {
+                if (!isEnabled) {
+                    return;
+                }
+                onHandshake(playerEvent.getIntentionPacket());
+            }
         });
 
         this.enable();
         this.wasRegistered = true;
     }
 
-    private void onHandshake(HandshakeC2SPacket packet) {
+    private void onHandshake(ClientIntentionPacket packet) {
         try {
-            if (packet.getIntendedState() == NetworkState.LOGIN) {
-                String address = packet.getAddress();
+            if (packet.getIntention() == ConnectionProtocol.LOGIN) {
+                String address = packet.getHostName();
                 if (address != null && address.contains("\u0000")) {
                     address = address.substring(0, address.indexOf('\u0000'));
                 }
@@ -151,10 +162,10 @@ public class PlayerOnlineListener implements FabricListener {
         }
     }
 
-    public void onPlayerKick(ServerPlayerEntity player) {
+    public void onPlayerKick(ServerPlayer player) {
         try {
-            UUID uuid = player.getUuid();
-            if (FabricAFKListener.afkTracker.isAfk(uuid)) {
+            UUID uuid = player.getUUID();
+            if (ForgeAFKListener.afkTracker.isAfk(uuid)) {
                 return;
             }
 
@@ -164,7 +175,7 @@ public class PlayerOnlineListener implements FabricListener {
         }
     }
 
-    public void onPlayerJoin(ServerPlayerEntity player) {
+    public void onPlayerJoin(ServerPlayer player) {
         try {
             actOnJoinEvent(player);
         } catch (Exception e) {
@@ -172,29 +183,28 @@ public class PlayerOnlineListener implements FabricListener {
         }
     }
 
-    private void actOnJoinEvent(ServerPlayerEntity player) {
-        UUID playerUUID = player.getUuid();
+    private void actOnJoinEvent(ServerPlayer player) {
+        UUID playerUUID = player.getUUID();
         long time = System.currentTimeMillis();
 
-        FabricAFKListener.afkTracker.performedAction(playerUUID, time);
+        ForgeAFKListener.afkTracker.performedAction(playerUUID, time);
 
         joinEventConsumer.onJoinGameServer(PlayerJoin.builder()
                 .server(serverInfo.getServer())
-                .player(new FabricPlayerData(player, server, joinAddressCache.getNullableString(playerUUID)))
+                .player(new ForgePlayerData(player, server, joinAddressCache.getNullableString(playerUUID)))
                 .time(time)
                 .build());
     }
 
-    // No event priorities on Fabric, so this has to be called with onPlayerQuit()
-    public void beforePlayerQuit(ServerPlayerEntity player) {
+    public void beforePlayerQuit(ServerPlayer player) {
         leaveEventConsumer.beforeLeave(PlayerLeave.builder()
                 .server(serverInfo.getServer())
-                .player(new FabricPlayerData(player, server, null))
+                .player(new ForgePlayerData(player, server, null))
                 .time(System.currentTimeMillis())
                 .build());
     }
 
-    public void onPlayerQuit(ServerPlayerEntity player) {
+    public void onPlayerQuit(ServerPlayer player) {
         try {
             actOnQuitEvent(player);
         } catch (Exception e) {
@@ -202,15 +212,15 @@ public class PlayerOnlineListener implements FabricListener {
         }
     }
 
-    private void actOnQuitEvent(ServerPlayerEntity player) {
-        UUID playerUUID = player.getUuid();
+    private void actOnQuitEvent(ServerPlayer player) {
+        UUID playerUUID = player.getUUID();
         long time = System.currentTimeMillis();
-        FabricAFKListener.afkTracker.loggedOut(playerUUID, time);
-        FabricPlayerPositionTracker.removePlayer(playerUUID);
+        ForgeAFKListener.afkTracker.loggedOut(playerUUID, time);
+        ForgePlayerPositionTracker.removePlayer(playerUUID);
 
         leaveEventConsumer.onLeaveGameServer(PlayerLeave.builder()
                 .server(serverInfo.getServer())
-                .player(new FabricPlayerData(player, server, null))
+                .player(new ForgePlayerData(player, server, null))
                 .time(time)
                 .build());
     }

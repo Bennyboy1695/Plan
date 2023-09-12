@@ -27,19 +27,19 @@ import com.djrapitops.plan.modules.SystemObjectProvidingModule;
 import com.djrapitops.plan.utilities.logging.ErrorLogger;
 import dagger.BindsInstance;
 import dagger.Component;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.playeranalytics.plan.identification.properties.FabricServerProperties;
-import net.playeranalytics.plan.modules.forge.FabricServerPropertiesModule;
-import net.playeranalytics.plan.modules.forge.FabricSuperClassBindingModule;
-import net.playeranalytics.plan.modules.forge.FabricTaskModule;
+import net.minecraft.server.MinecraftServer;
+import net.playeranalytics.plan.identification.properties.ForgeServerProperties;
+import net.playeranalytics.plan.modules.forge.ForgeServerPropertiesModule;
+import net.playeranalytics.plan.modules.forge.ForgeSuperClassBindingModule;
+import net.playeranalytics.plan.modules.forge.ForgeTaskModule;
 import net.playeranalytics.plugin.PlatformAbstractionLayer;
 
 import javax.inject.Singleton;
 
 /**
- * Dagger component for constructing the required plugin systems on Fabric.
+ * Dagger component for constructing the required plugin systems on Forge.
  *
- * @author Kopo942
+ * @author Bennyboy1695
  */
 @Singleton
 @Component(modules = {
@@ -48,11 +48,11 @@ import javax.inject.Singleton;
         FiltersModule.class,
 
         ServerCommandModule.class,
-        FabricServerPropertiesModule.class,
-        FabricSuperClassBindingModule.class,
-        FabricTaskModule.class
+        ForgeServerPropertiesModule.class,
+        ForgeSuperClassBindingModule.class,
+        ForgeTaskModule.class
 })
-public interface PlanFabricComponent {
+public interface PlanForgeComponent {
 
     PlanCommand planCommand();
 
@@ -72,11 +72,11 @@ public interface PlanFabricComponent {
         Builder abstractionLayer(PlatformAbstractionLayer abstractionLayer);
 
         @BindsInstance
-        Builder server(MinecraftDedicatedServer server);
+        Builder server(MinecraftServer server);
 
         @BindsInstance
-        Builder serverProperties(FabricServerProperties serverProperties);
+        Builder serverProperties(ForgeServerProperties serverProperties);
 
-        PlanFabricComponent build();
+        PlanForgeComponent build();
     }
 }

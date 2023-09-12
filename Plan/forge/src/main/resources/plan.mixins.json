@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.playeranalytics.plan.gathering.listeners.events.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "plan-forge-refmap.json",
+  "mixins": [
+    "CommandSourceStackMixin",
+    "KickCommandMixin",
+    "PlayerListMixin",
+    "ServerGamePacketListenerImplMixin",
+    "ServerHandshakePacketListenerImplMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

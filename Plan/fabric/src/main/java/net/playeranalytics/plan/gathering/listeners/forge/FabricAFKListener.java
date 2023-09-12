@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with Plan. If not, see <https://www.gnu.org/licenses/>.
  */
-package net.playeranalytics.plan.gathering.listeners.fabric;
+package net.playeranalytics.plan.gathering.listeners.forge;
 
 import com.djrapitops.plan.gathering.afk.AFKTracker;
 import com.djrapitops.plan.settings.config.PlanConfig;
