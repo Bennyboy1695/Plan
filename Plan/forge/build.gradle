@@ -1,4 +1,71 @@
-apply plugin: 'dev.architectury.loom'
+apply plugin: 'net.neoforged.gradle'
+apply plugin: 'org.spongepowered.mixin'
+
+mixin {
+    add sourceSets.main, "plan-forge-refmap.json"
+
+    config 'plan.mixins.json'
+}
+
+minecraft {
+    mappings channel: "official", version: "1.20.1"
+    copyIdeResources = true
+    runs {
+        // applies to all the run configs below
+        configureEach {
+            workingDirectory project.file("run/${it.name}")
+
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        // By default, the server will crash when no gametests are provided.
+        // The gametest system is also enabled by default for other run configs under the /test command.
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        data {
+            // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
+            // workingDirectory project.file('run-data')
+
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+/*configurations {
+    compileClasspath {
+        resolutionStrategy.force 'com.google.guava:guava:23.6-jre'
+    }
+}*/
 
 dependencies {
     shadow project(path: ":api")
@@ -8,20 +75,13 @@ dependencies {
 
     shadow "net.playeranalytics:platform-abstraction-layer-api:$palVersion"
 
-    minecraft "com.mojang:minecraft:1.20.1"
-    mappings loom.officialMojangMappings()
-    forge "net.neoforged:forge:1.20.1-47.1.76"
+    minecraft "net.neoforged:forge:1.20.1-47.1.65"
     compileOnly("net.luckperms:api:5.4")
 
+/*    annotationProcessor('org.spongepowered:mixin:0.8.5:processor') {
+        exclude group: 'com.google.guava', module: 'guava'
+    }*/
     testImplementation project(path: ":common", configuration: 'testArtifacts')
-}
-
-loom {
-    // Defining separate refmap file prevents conflicts with plugin mixins
-    mixin.defaultRefmapName.set("plan-forge-refmap.json")
-    forge {
-        mixinConfig "plan.mixins.json"
-    }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -29,20 +89,20 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    inputs.property "version", project.ext.fullVersion
+    inputs.property "version", fullVersion.toString().replace(" ", ".")
 
-    filesMatching("META_INF/mods.toml") {
-        expand "version": project.ext.fullVersion
+    filesMatching("META-INF/mods.toml") {
+        expand "version": fullVersion.toString().replace(" ", ".")
     }
 }
 
 shadowJar {
     configurations = [project.configurations.shadow]
 
-    from findProject(':extensions:adventure').tasks.shadowJar.archiveFile
+    archiveBaseName.set('PlanForge')
+    archiveClassifier.set('')
 
-    exclude('net.neoforged:*')
-    exclude('/mappings/')
+    from findProject(':extensions:adventure').tasks.shadowJar.archiveFile
 
     // Exclude these files
     exclude "**/*.svg"
@@ -75,9 +135,15 @@ shadowJar {
     exclude "jakarta/xml/**/*"
     exclude "javassist/**/*"
 
+    exclude "org/apache/commons/lang3/**"
+    exclude "org/apache/maven/**"
+    //Forge includes this so have to be more exclusive
     relocate('org.apache', 'plan.org.apache') {
         exclude 'org/apache/logging/**'
+        exclude 'org/apache/commons/lang3/**'
+        exclude 'org/apache/maven/**'
     }
+    relocate('plan.org.apache.maven', 'org.apache.maven')
     relocate 'dagger', 'plan.dagger'
     // Don't relocate MySQL or SQLite since they are loaded with a isolated class loader
     // relocate 'org.sqlite', 'plan.org.sqlite'
@@ -101,19 +167,24 @@ shadowJar {
     relocate 'org.slf4j', 'plan.org.slf4j'
 
     relocate 'org.json.simple', 'plan.org.json.simple'
+    relocate 'net.kyori', 'plan.net.kyori'
 
     mergeServiceFiles()
 }
 
-remapJar {
-    dependsOn tasks.shadowJar
-    mustRunAfter tasks.shadowJar
-    inputFile = shadowJar.archiveFile.get()
-    addNestedDependencies = true
-
-    destinationDirectory.set(file("$rootDir/builds/"))
-    archiveBaseName.set('PlanForge')
-    archiveClassifier.set('')
+reobf {
+    shadowJar {
+        dependsOn createMcpToSrg
+        mappings = createMcpToSrg.output
+    }
 }
 
-shadowJar.finalizedBy(remapJar)
+artifacts {
+    archives shadowJar
+}
+
+build.dependsOn tasks.shadowJar
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}

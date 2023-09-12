@@ -55,7 +55,7 @@ public class CommandManager {
 
     public static boolean checkPermission(CommandSourceStack src, String permission) {
         if (isPermissionsApiAvailable()) {
-            return LuckPermsHandler.INSTANCE.hasPermission(src, permission);
+            return src.isPlayer() ? LuckPermsHandler.INSTANCE.hasPermission(src.getPlayer(), permission) : src.hasPermission(2);
         } else if (src.hasPermission(2)) {
             return true;
         } else {

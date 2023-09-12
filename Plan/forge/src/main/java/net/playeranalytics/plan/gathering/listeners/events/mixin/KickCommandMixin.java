@@ -31,7 +31,7 @@ import java.util.Collection;
 @Mixin(KickCommand.class)
 public class KickCommandMixin {
 
-    @Inject(method = "kickPlayers", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;disconnect(Lnet/minecraft/network/chat/Component;)V"))
+    @Inject(method = {"kickPlayers", "m_137801_"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;disconnect(Lnet/minecraft/network/chat/Component;)V"))
     private static void onKickPlayer(CommandSourceStack source, Collection<ServerPlayer> targets, Component reason, CallbackInfoReturnable<Integer> cir) {
         PlanForgeEvents.postKickEvent(source, targets, reason);
     }

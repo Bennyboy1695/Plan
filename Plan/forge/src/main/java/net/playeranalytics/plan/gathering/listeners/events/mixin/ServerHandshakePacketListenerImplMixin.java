@@ -27,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ServerHandshakePacketListenerImpl.class)
 public class ServerHandshakePacketListenerImplMixin {
 
-    @Inject(method = "handleIntention", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;setListener(Lnet/minecraft/network/PacketListener;)V", ordinal = 0))
+    @Inject(method = {"handleIntention", "m_7322_"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/network/Connection;setListener(Lnet/minecraft/network/PacketListener;)V", ordinal = 0))
     public void onClientHandshakeFromNetwork(ClientIntentionPacket packet, CallbackInfo ci) {
         PlanForgeEvents.postHandshakeEvent(packet);
     }

@@ -87,7 +87,7 @@ public class ForgeAFKListener implements ForgeListener {
 
     private static boolean checkPermission(ServerPlayer player, String permission) {
         if (CommandManager.isPermissionsApiAvailable()) {
-            return LuckPermsHandler.INSTANCE.hasPermission(player.createCommandSourceStack(), permission);
+            return LuckPermsHandler.INSTANCE.hasPermission(player, permission);
         } else {
             return false;
         }

@@ -1,0 +1,38 @@
+{
+  "mappings": {
+    "net/playeranalytics/plan/gathering/listeners/events/mixin/PlayerListMixin": {
+      "canPlayerLogin": "Lnet/minecraft/server/players/PlayerList;m_6418_(Ljava/net/SocketAddress;Lcom/mojang/authlib/GameProfile;)Lnet/minecraft/network/chat/Component;"
+    },
+    "net/playeranalytics/plan/gathering/listeners/events/mixin/KickCommandMixin": {
+      "kickPlayers": "Lnet/minecraft/server/commands/KickCommand;m_137801_(Lnet/minecraft/commands/CommandSourceStack;Ljava/util/Collection;Lnet/minecraft/network/chat/Component;)I",
+      "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;disconnect(Lnet/minecraft/network/chat/Component;)V": "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;m_9942_(Lnet/minecraft/network/chat/Component;)V"
+    },
+    "net/playeranalytics/plan/gathering/listeners/events/mixin/ServerGamePacketListenerImplMixin": {
+      "Lnet/minecraft/server/level/ServerPlayer;serverLevel()Lnet/minecraft/server/level/ServerLevel;": "Lnet/minecraft/server/level/ServerPlayer;m_284548_()Lnet/minecraft/server/level/ServerLevel;",
+      "handleMovePlayer": "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;m_7185_(Lnet/minecraft/network/protocol/game/ServerboundMovePlayerPacket;)V"
+    },
+    "net/playeranalytics/plan/gathering/listeners/events/mixin/ServerHandshakePacketListenerImplMixin": {
+      "Lnet/minecraft/network/Connection;setListener(Lnet/minecraft/network/PacketListener;)V": "Lnet/minecraft/network/Connection;m_129505_(Lnet/minecraft/network/PacketListener;)V",
+      "handleIntention": "Lnet/minecraft/server/network/ServerHandshakePacketListenerImpl;m_7322_(Lnet/minecraft/network/protocol/handshake/ClientIntentionPacket;)V"
+    }
+  },
+  "data": {
+    "named:intermediary": {
+      "net/playeranalytics/plan/gathering/listeners/events/mixin/PlayerListMixin": {
+        "canPlayerLogin": "Lnet/minecraft/server/players/PlayerList;m_6418_(Ljava/net/SocketAddress;Lcom/mojang/authlib/GameProfile;)Lnet/minecraft/network/chat/Component;"
+      },
+      "net/playeranalytics/plan/gathering/listeners/events/mixin/KickCommandMixin": {
+        "kickPlayers": "Lnet/minecraft/server/commands/KickCommand;m_137801_(Lnet/minecraft/commands/CommandSourceStack;Ljava/util/Collection;Lnet/minecraft/network/chat/Component;)I",
+        "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;disconnect(Lnet/minecraft/network/chat/Component;)V": "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;m_9942_(Lnet/minecraft/network/chat/Component;)V"
+      },
+      "net/playeranalytics/plan/gathering/listeners/events/mixin/ServerGamePacketListenerImplMixin": {
+        "Lnet/minecraft/server/level/ServerPlayer;serverLevel()Lnet/minecraft/server/level/ServerLevel;": "Lnet/minecraft/server/level/ServerPlayer;m_284548_()Lnet/minecraft/server/level/ServerLevel;",
+        "handleMovePlayer": "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;m_7185_(Lnet/minecraft/network/protocol/game/ServerboundMovePlayerPacket;)V"
+      },
+      "net/playeranalytics/plan/gathering/listeners/events/mixin/ServerHandshakePacketListenerImplMixin": {
+        "Lnet/minecraft/network/Connection;setListener(Lnet/minecraft/network/PacketListener;)V": "Lnet/minecraft/network/Connection;m_129505_(Lnet/minecraft/network/PacketListener;)V",
+        "handleIntention": "Lnet/minecraft/server/network/ServerHandshakePacketListenerImpl;m_7322_(Lnet/minecraft/network/protocol/handshake/ClientIntentionPacket;)V"
+      }
+    }
+  }
+}

@@ -23,15 +23,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.playeranalytics.plan.commands.CommandManager;
 import net.playeranalytics.plan.commands.use.ForgeMessageBuilder;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-@Mixin(CommandSourceStack.class)
+@Mixin(value = CommandSourceStack.class)
 public abstract class CommandSourceStackMixin implements CMDSender {
 
     @Override
@@ -44,10 +44,10 @@ public abstract class CommandSourceStackMixin implements CMDSender {
         return isPlayer();
     }
 
-    @Shadow
-    public abstract void sendSuccess(Supplier<Component> supplier, boolean broadcastToOps);
+    @Shadow(aliases = {"m_288197_"})
+    public abstract void sendSuccess(Supplier<Component> par1, boolean par2);
 
-    @Shadow
+    @Shadow(aliases = {"m_81373_"})
     @Nullable
     public abstract Entity getEntity();
 
@@ -73,7 +73,7 @@ public abstract class CommandSourceStackMixin implements CMDSender {
 
     @Override
     public void send(String message) {
-        this.sendSuccess(() -> Component.literal(message), false);
+        sendSuccess(() -> Component.literal(message), false);
     }
 
     @Override

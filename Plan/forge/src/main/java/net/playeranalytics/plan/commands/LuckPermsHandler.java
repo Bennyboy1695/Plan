@@ -20,6 +20,7 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.fml.ModList;
 
 public enum LuckPermsHandler {
@@ -29,8 +30,8 @@ public enum LuckPermsHandler {
         return ModList.get().isLoaded("luckperms") ? LuckPermsProvider.get() : null;
     }
 
-    public boolean hasPermission(CommandSourceStack player, String permission) {
-        User user = getLuckPerms().getPlayerAdapter(CommandSourceStack.class).getUser(player);
+    public boolean hasPermission(ServerPlayer player, String permission) {
+        User user = getLuckPerms().getPlayerAdapter(ServerPlayer.class).getUser(player);
         return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
     }
 }

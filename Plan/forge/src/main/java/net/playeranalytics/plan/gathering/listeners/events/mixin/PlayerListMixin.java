@@ -30,7 +30,7 @@ import java.net.SocketAddress;
 @Mixin(PlayerList.class)
 public class PlayerListMixin {
 
-    @Inject(method = "canPlayerLogin", at = @At(value = "TAIL"))
+    @Inject(method = {"canPlayerLogin", "m_6418_"}, at = @At(value = "TAIL"))
     public void onLogin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Component> cir) {
         PlanForgeEvents.postLoginEvent(address, profile, cir.getReturnValue());
     }
